@@ -36,7 +36,7 @@ def main(arguments):
   args = parser.parse_args(arguments)
 
   print(args)
-  
+
   h =     Dataset(args.infile).variables[args.hvar][0,:,args.latidx,args.lonidx].squeeze()
   salt =  Dataset(args.infile).variables[args.saltvar][0,:,args.latidx,args.lonidx].squeeze()
   temp =  Dataset(args.infile).variables[args.tempvar][0,:,args.latidx,args.lonidx].squeeze()
@@ -82,4 +82,4 @@ def main(arguments):
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
 
-  
+
