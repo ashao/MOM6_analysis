@@ -430,7 +430,7 @@ subroutine find_neutral_surface_positions_discontinuous(nk, &
                                 PoL, PoR, KoL, KoR, hEff)
   integer,                    intent(in)    :: nk      !< Number of levels
   real, dimension(nk+1),      intent(in)    :: Pres_l  !< Left-column interface pressure (Pa)
-  real, dimension(nk+1),      intent(in)    :: Tint_lt !< Left-column top interface potential temperature (degC)
+  real, dimension(nk),        intent(in)    :: Tint_lt !< Left-column top interface potential temperature (degC)
   real, dimension(nk),        intent(in)    :: Tint_lb !< Left-column bottom interface potential temperature (degC)
   real, dimension(nk),        intent(in)    :: Sint_lt !< Left-column top interface salinity (ppt)
   real, dimension(nk),        intent(in)    :: Sint_lb !< Left-column bottom interface salinity (ppt)
@@ -636,10 +636,10 @@ subroutine find_neutral_surface_positions_discontinuous(nk, &
     ! NOTE: This would be better expressed in terms of the layers thicknesses rather
     ! than as differences of position - AJA
     if (k_surface>1) then
-      hL = absolute_position_discontinuous(nk,Pl,KoL,PoL,k_surface) - &
-           absolute_position_discontinuous(nk,Pl,KoL,PoL,k_surface-1)
-      hR = absolute_position_discontinuous(nk,Pr,KoR,PoR,k_surface) - &
-           absolute_position_discontinuous(nk,Pr,KoR,PoR,k_surface-1)
+      hL = absolute_position_discontinuous(nk,Pres_l,KoL,PoL,k_surface) - &
+           absolute_position_discontinuous(nk,Pres_l,KoL,PoL,k_surface-1)
+      hR = absolute_position_discontinuous(nk,Pres_r,KoR,PoR,k_surface) - &
+           absolute_position_discontinuous(nk,Pres_r,KoR,PoR,k_surface-1)
       if ( hL + hR > 0.) then
         hEff(k_surface-1) = 2. * hL * hR / ( hL + hR ) ! Analogous of effective resistance for two resistors
         if (hEff(k_surface-1)<0.) then
@@ -664,7 +664,7 @@ real function absolute_position_discontinuous(n,Pint,Karr,NParr,k_surface)
   integer :: k_surface, k
 
   k = Karr(k_surface)
-  if (k>4*n) stop 'absolute_position: k>nk is out of bounds!'
+  if (k>n) stop 'absolute_position: k>nk is out of bounds!'
   absolute_position_discontinuous = Pint(k) + NParr(k_surface) * ( Pint(k+1) - Pint(k) )
 
 end function absolute_position_discontinuous
