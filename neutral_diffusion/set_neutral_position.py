@@ -21,6 +21,12 @@ def absolute_position_discontinuous(Pint, Karr, NParr, k_surface):
     k = Karr[k_surface]
     return Pint[k] + NParr[k_surface] * ( Pint[k+1] - Pint[k] )
 
+def interface_nondim_position(k):
+    if np.floor(0.5*k) == np.floor(0.5*(k+1)):
+      return 0.
+    else:
+      return 1.
+
 def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dRdT_lt, dRdT_lb, dRdS_lt, dRdS_lb, Pres_r, Tint_rt, Tint_rb, Sint_rt, Sint_rb, dRdT_rt, dRdT_rb, dRdS_rt, dRdS_rb ):
 
   nk = Tint_lt.size
@@ -78,7 +84,6 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
           searching_right_column = not searching_right_column
 
     if searching_left_column:
-      same_k = np.floor( klm1*0.5 ) == np.floor( (klm1+1)*0.5 )
       same_p = Pl[klm1] == Pl[klm1+1]
       dRhoTop = 0.5 * ( ( dRdT_l[klm1] + dRdT_r[kr] ) * ( Tl[klm1] - Tr[kr] )
                       + ( dRdS_l[klm1] + dRdS_r[kr] ) * ( Sl[klm1] - Sr[kr] ) )
@@ -90,19 +95,18 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
       if kr+kl==0:                # At surface
         PoL[k_surface] = 0.
       elif dRhoTop >= dRhoBot:
-        PoL[k_surface] = 1.
+        PoL[k_surface] = interface_nondim_position(klm1)
       elif ( dRhoTop<0. and dRhoBot>0.) and ( not same_k ):
         PoL[k_surface] = 1.
+      elif dRhoBot == 0.:
+        PoL[k_surface] = interface_nondim_position(klm1+1)
       else:
         PoL[k_surface] = interpolate_for_nondim_position( dRhoTop, Pl[klm1], dRhoBot, Pl[klm1+1] )
 
       KoL[k_surface] = np.floor(0.5*klm1)
       KoR[k_surface] = np.floor(0.5*kr)
       if kr <= (2*nk-1):
-        if np.floor(0.5*kr) == np.floor(0.5*(kr+1)):
-          PoR[k_surface] = 0.
-        else:
-          PoR[k_surface] = 1.
+        PoR[k_surface] = interface_nondim_position(kr)
       else:
         PoR[k_surface] = 1.
         KoR[k_surface] = nk-1
@@ -114,6 +118,7 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
         searching_left_column = False
       lastK_left = klm1
       lastK_right = kr
+
     elif (searching_right_column):
       same_k = np.floor( krm1*0.5 ) == np.floor( (krm1+1)*0.5 )
       same_p = Pr[krm1] == Pr[krm1+1]
@@ -126,19 +131,18 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
       if kr+kl==0:                # At surface
         PoR[k_surface] = 0.       # Point to top of top layer
       elif dRhoTop >= dRhoBot:    # Top is unstratified or unstable
-        PoR[k_surface] = 0.
+        PoR[k_surface] = interface_nondim_position(krm1)
       elif ( dRhoTop<0. and dRhoBot>0.) and ( not same_k ):
         PoR[k_surface] = 1.      # Point to bottom of layer of krm1
+      elif dRhoBot == 0.:
+        PoR[k_surface] = interface_nondim_position(krm1+1)
       else:
         PoR[k_surface] = interpolate_for_nondim_position( dRhoTop, Pr[krm1], dRhoBot, Pr[krm1+1] )
 
       KoR[k_surface] = np.floor(0.5*krm1)
       KoL[k_surface] = np.floor(0.5*kl)
       if kl <= (2*nk-1):
-        if np.floor(0.5*kl) == np.floor(0.5*(kl+1)):
-          PoL[k_surface] = 0.
-        else:
-          PoL[k_surface] = 1.
+        PoL[k_surface] = interface_nondim_position(kl)
       else:
         PoL[k_surface] = 1.
         KoL[k_surface] = nk-1

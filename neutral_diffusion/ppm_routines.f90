@@ -606,7 +606,6 @@ subroutine find_neutral_surface_positions_discontinuous(nk, &
       KoR(k_surface) = CEILING( 0.5*krm1 )
       KoL(k_surface) = CEILING( 0.5*kl )
       if (kl < 2*nk) then
-        PoL(k_surface) = 0.
         if ( CEILING(0.5*kl) == CEILING(0.5*(kl+1)) ) then
           PoL(k_surface) = 0.
         else
