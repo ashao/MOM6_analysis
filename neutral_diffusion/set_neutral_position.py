@@ -17,7 +17,7 @@ def interpolate_for_nondim_position(dRhoTop, Pneg, dRhoBot, Ppos):
     interpolate_for_nondim_position = 0.5
   return interpolate_for_nondim_position
 
-def absolute_position_discontinuous(Pint, Karr, NParr, k_surface):
+def absolute_position(Pint, Karr, NParr, k_surface):
     k = Karr[k_surface]
     return Pint[k] + NParr[k_surface] * ( Pint[k+1] - Pint[k] )
 
@@ -98,14 +98,14 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
       elif same_k: # Searching within a layer
         if dRhoTop > 0.: # Right surface always lighter, point to top interface of this layer
           PoL[k_surface] = 0.
-          print("Point to top interface")  
+          print("Point to top interface")
         elif dRhoTop >= dRhoBot: # Left layer unstratified, point to top unless it was pointed to last
           if lastP_left == 0. or np.floor(0.5*klm1)==(nk-1):
             PoL[k_surface] = 1.
           else:
             PoL[k_surface] = 0.
           print("dRhoTop >= dRhoBot")
-        else: 
+        else:
           # dRhoTop is negative and dRhoTop is postive, so interpolate to find neutral surface
           PoL[k_surface] = interpolate_for_nondim_position( dRhoTop, Pl[klm1], dRhoBot, Pl[klm1+1] )
           print("Interpolate for position")
@@ -114,7 +114,7 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
         PoL[k_surface] = 0.
         klm1 += 1
 #        PoL[k_surface] = 1.
-        
+
         lastP_left = -1.
         print("At discontinuity")
 
@@ -131,7 +131,7 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
         reached_bottom = True
         searching_right_column = True
         searching_left_column = False
-      
+
 
     elif (searching_right_column):
       same_k = np.floor( krm1*0.5 ) == np.floor( (krm1+1)*0.5 )
@@ -156,7 +156,7 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
           else:
             PoR[k_surface] = 0.
           print("dRhoTop>=dRhoBot")
-        else: 
+        else:
           PoR[k_surface] = interpolate_for_nondim_position( dRhoTop, Pr[krm1], dRhoBot, Pl[krm1+1] )
           print("Interpolate for position")
         lastP_right = PoR[k_surface]
@@ -184,10 +184,10 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
     print("Position on left : %f" % PoL[k_surface])
     print("Position on right: %f" % PoR[k_surface])
     if k_surface>0:
-      PoL_abs[k_surface] = absolute_position_discontinuous(Pres_l, KoL, PoL, k_surface)
-      PoR_abs[k_surface] = absolute_position_discontinuous(Pres_r, KoR, PoR, k_surface)
-      hL[k_surface] = absolute_position_discontinuous(Pres_l, KoL, PoL, k_surface) - absolute_position_discontinuous(Pres_l, KoL, PoL, k_surface-1)
-      hR[k_surface] = absolute_position_discontinuous(Pres_r, KoR, PoR, k_surface) - absolute_position_discontinuous(Pres_r, KoR, PoR, k_surface-1)
+      PoL_abs[k_surface] = absolute_position(Pres_l, KoL, PoL, k_surface)
+      PoR_abs[k_surface] = absolute_position(Pres_r, KoR, PoR, k_surface)
+      hL[k_surface] = absolute_position(Pres_l, KoL, PoL, k_surface) - absolute_position(Pres_l, KoL, PoL, k_surface-1)
+      hR[k_surface] = absolute_position(Pres_r, KoR, PoR, k_surface) - absolute_position(Pres_r, KoR, PoR, k_surface-1)
       if (hL[k_surface] + hR[k_surface] > 0.):
           hEff[k_surface-1] = 2. * hL[k_surface] * hR[k_surface] / ( hL[k_surface]+hR[k_surface] )
       else:
@@ -221,7 +221,7 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
     dRdT_l[:,1] = dRdT_lb
     dRdS_l[:,0] = dRdS_lt
     dRdS_l[:,1] = dRdS_lb
-    
+
     Pr[:,0] = Pres_r[0:-1]
     Pr[:,1] = Pres_r[1:]
     Sr[:,0] = Sint_rt
@@ -240,6 +240,7 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
     reached_bottom = False
 
     for k_surface in np.arange(0,4*nk):
+
         print( "\nWorking on k_surface %d: Tl[%d,%d]: %f Tr[%d,%d]: %f" % (k_surface, kl_l, ki_l, Tl[kl_l,ki_l], kl_r, ki_r, Tr[kl_r,ki_r]))
         dRho = 0.5 * ( ( dRdT_r[kl_r,ki_r] + dRdT_l[kl_l,ki_l] ) * ( Tr[kl_r,ki_r] - Tl[kl_l,ki_l] )
                       + (dRdS_r[kl_r,ki_r] + dRdS_l[kl_l,ki_l] ) * ( Sr[kl_r,ki_r] - Sl[kl_l,ki_l] ) )
@@ -284,7 +285,7 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
             PoL[k_surface] = 1.
           elif dRhoBot > 0. and dRhoTop >0.: # Neutral surface lgihter than anything in layer, point to bottom
             PoL[k_surface] = 0.
-          else: 
+          else:
             PoL[k_surface] = interpolate_for_nondim_position( dRhoTop, Pl[k_search_left,0], dRhoBot, Pl[k_search_left,1] )
           KoL[k_surface] = k_search_left
           KoR[k_surface] = kl_r
@@ -294,16 +295,16 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
             k_search_left = k_search_left + 1
 #            k_search_right = k_search_right + 1
             lastP_left = -1
-           
+
           # Set position on right
           if ki_r == 0:
             PoR[k_surface] = 0.
           else:
             PoR[k_surface] = 1.
-          
+
           # Determine which interface on the right will need to be connected
           if ki_r == 0:
-            ki_r = 1 
+            ki_r = 1
           elif kl_r < (nk-1): # Set to top interface of next layer unless at the bottom of the column
             ki_r = 0
             kl_r = kl_r + 1
@@ -313,7 +314,7 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
             searching_left_column = False
           else:
             print("AHHHH!")
-          
+
         elif (searching_right_column):
           search_dir = np.append(search_dir,1)
           dRhoTop = 0.5 * ( ( dRdT_r[k_search_right,0] + dRdT_l[kl_l,ki_l] ) * ( Tr[k_search_right,0] - Tl[kl_l,ki_l] )
@@ -340,26 +341,26 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
             PoR[k_surface] = 1.
           elif dRhoBot > 0. and dRhoTop >0.: # Neutral surface lgihter than anything in layer, point to bottom
             PoR[k_surface] = 0.
-          else: 
+          else:
             PoR[k_surface] = interpolate_for_nondim_position( dRhoTop, Pr[k_search_right,0], dRhoBot, Pr[k_search_right,1] )
-          
+
           lastP_right = PoR[k_surface]
           KoL[k_surface] = kl_l
           KoR[k_surface] = k_search_right
-         
+
           if PoR[k_surface] == 1.:
             k_search_right = k_search_right + 1
             lastP_right = -1
-             
+
           # Set position on left
           if ki_l == 0:
             PoL[k_surface] = 0.
           else:
             PoL[k_surface] = 1.
-          
+
           # Determine which interface on the left will need to be connected
           if ki_l == 0: # Move to bottom interface of same layer
-            ki_l = 1 
+            ki_l = 1
           elif kl_l < (nk-1): # Set to top interface of next layer unless at the bottom of the column
             ki_l = 0
             kl_l = kl_l + 1
@@ -376,10 +377,10 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
         print("Position on right: %f" % PoR[k_surface])
         if k_surface>0:
           print(Pres_l,KoL)
-          PoL_abs[k_surface] = absolute_position_discontinuous(Pres_l, KoL, PoL, k_surface)
-          PoR_abs[k_surface] = absolute_position_discontinuous(Pres_r, KoR, PoR, k_surface)
-          hL[k_surface] = absolute_position_discontinuous(Pres_l, KoL, PoL, k_surface) - absolute_position_discontinuous(Pres_l, KoL, PoL, k_surface-1)
-          hR[k_surface] = absolute_position_discontinuous(Pres_r, KoR, PoR, k_surface) - absolute_position_discontinuous(Pres_r, KoR, PoR, k_surface-1)
+          PoL_abs[k_surface] = absolute_position(Pres_l, KoL, PoL, k_surface)
+          PoR_abs[k_surface] = absolute_position(Pres_r, KoR, PoR, k_surface)
+          hL[k_surface] = absolute_position(Pres_l, KoL, PoL, k_surface) - absolute_position(Pres_l, KoL, PoL, k_surface-1)
+          hR[k_surface] = absolute_position(Pres_r, KoR, PoR, k_surface) - absolute_position(Pres_r, KoR, PoR, k_surface-1)
           if (hL[k_surface] + hR[k_surface] > 0.):
             hEff[k_surface-1] = 2. * hL[k_surface] * hR[k_surface] / ( hL[k_surface]+hR[k_surface] )
           else:
@@ -387,147 +388,160 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
           print("hL: %f hR: %f hEff: %f" % (hL[k_surface],hR[k_surface],hEff[k_surface-1]))
     return PoL, PoR, PoL_abs, PoR_abs, KoL, KoR, hEff, hL, hR, search_dir
 
-def find_neutral_surface_positions_continuous(nk, Pl, Tl, Sl, dRdTl, dRdSl, Pr, Tr, Sr, dRdTr, dRdSr, PoL, 
-                                              PoR, KoL, KoR, hEff):
+def find_neutral_surface_positions_continuous(Pl, Tl, Sl, dRdTl, dRdSl, Pr, Tr, Sr, dRdTr, dRdSr):
+  nk = Pl.size - 1
   kr = 0 ; lastK_right = 0 ; lastP_right = 0.
   kl = 0 ; lastK_left = 0 ; lastP_left = 0.
   reached_bottom = False
 
-  ! Loop over each neutral surface, working from top to bottom
+  PoL = np.zeros(2*nk+2) ; PoR = np.zeros(2*nk+2)
+  PoL_abs = np.zeros(2*nk+2) ; PoR_abs = np.zeros(2*nk+2)
+  KoL = np.zeros(2*nk+2, dtype = np.int8) ; KoR = np.zeros(2*nk+2, dtype = np.int8)
+  hEff = np.zeros(2*nk+1)
+  hL = np.zeros(2*nk+2)
+  hR = np.zeros(2*nk+2)
+
+
+  # Loop over each neutral surface, working from top to bottom
   for k_surface in np.arange(0, 2*nk+2):
-    klm1 = np.max(kl-1, 1)
-    if (klm1>nk) stop 'find_neutral_surface_positions(): klm1 went out of bounds!'
-    krm1 = max(kr-1, 1)
-    if (krm1>nk) stop 'find_neutral_surface_positions(): krm1 went out of bounds!'
+    klm1 = max(kl-1, 0)
+    krm1 = max(kr-1, 0)
 
-    ! Potential density difference, rho(kr) - rho(kl)
-    dRho = 0.5 * ( ( dRdTr(kr) + dRdTl(kl) ) * ( Tr(kr) - Tl(kl) ) &
-                 + ( dRdSr(kr) + dRdSl(kl) ) * ( Sr(kr) - Sl(kl) ) )
-    ! Which column has the lighter surface for the current indexes, kr and kl
-    if (.not. reached_bottom) then
-      if (dRho < 0.) then
-        searching_left_column = .true.
-        searching_right_column = .false.
-      elseif (dRho > 0.) then
-        searching_right_column = .true.
-        searching_left_column = .false.
-      else ! dRho == 0.
-        if (kl + kr == 2) then ! Still at surface
-          searching_left_column = .true.
-          searching_right_column = .false.
-        else ! Not the surface so we simply change direction
-          searching_left_column = .not.  searching_left_column
-          searching_right_column = .not.  searching_right_column
-        endif
-      endif
-    endif
+    print( "\nWorking on k_surface %d: Tl[%d]: %f Tr[%d]: %f" % (k_surface, kl, Tl[kl], kr, Tr[kr]))
+    # Potential density difference, rho[kr] - rho[kl]
+    dRho = 0.5 * ( ( dRdTr[kr] + dRdTl[kl] ) * ( Tr[kr] - Tl[kl] )
+                 + ( dRdSr[kr] + dRdSl[kl] ) * ( Sr[kr] - Sl[kl] ) )
+    # Which column has the lighter surface for the current indexes, krandkl
+    if (not reached_bottom):
+      if (dRho < 0.):
+        searching_left_column = True
+        searching_right_column = False
+      elif (dRho > 0.):
+        searching_right_column = True
+        searching_left_column = False
+      else: # dRho == 0.
+        if (kl + kr == 0): # Still at surface
+          searching_left_column = True
+          searching_right_column = False
+        else: #notthe surface so we simply change direction
+          searching_left_column = not  searching_left_column
+          searching_right_column = not  searching_right_column
 
-    if (searching_left_column) then
-      ! Interpolate for the neutral surface position within the left column, layer klm1
-      ! Potential density difference, rho(kl-1) - rho(kr) (should be negative)
-      dRhoTop = 0.5 * ( ( dRdTl(klm1) + dRdTr(kr) ) * ( Tl(klm1) - Tr(kr) ) &
-                     + ( dRdSl(klm1) + dRdSr(kr) ) * ( Sl(klm1) - Sr(kr) ) )
-      ! Potential density difference, rho(kl) - rho(kr) (will be positive)
-      dRhoBot = 0.5 * ( ( dRdTl(klm1+1) + dRdTr(kr) ) * ( Tl(klm1+1) - Tr(kr) ) &
-                      + ( dRdSl(klm1+1) + dRdSr(kr) ) * ( Sl(klm1+1) - Sr(kr) ) )
+    if (searching_left_column):
+      # Interpolate for the neutral surface position within the left column, layer klm1
+      # Potential density difference, rho(kl-1) - rho[kr] (should be negative)
+      dRhoTop = 0.5 * ( ( dRdTl[klm1] + dRdTr[kr] ) * ( Tl[klm1] - Tr[kr] )
+                      + ( dRdSl[klm1] + dRdSr[kr] ) * ( Sl[klm1] - Sr[kr] ) )
+      # Potential density difference, rho[kl] - rho[kr] (will be positive)
+      dRhoBot = 0.5 * ( ( dRdTl[klm1+1] + dRdTr[kr] ) * ( Tl[klm1+1] - Tr[kr] )
+                      + ( dRdSl[klm1+1] + dRdSr[kr] ) * ( Sl[klm1+1] - Sr[kr] ) )
+      print("Searching left interfaces (%d, %d): dRhoTop: %f dRhoBot: %f" % (klm1, klm1+1, dRhoTop, dRhoBot))
 
-      ! Because we are looking left, the right surface, kr, is lighter than klm1+1 and should be denser than klm1
-      ! unless we are still at the top of the left column (kl=1)
-      if (dRhoTop > 0. .or. kr+kl==2) then
-        PoL(k_surface) = 0. ! The right surface is lighter than anything in layer klm1
-      elseif (dRhoTop >= dRhoBot) then ! Left layer is unstratified
-        PoL(k_surface) = 1.
-      else
-        ! Linearly interpolate for the position between Pl(kl-1) and Pl(kl) where the density difference
-        ! between right and left is zero.
-        PoL(k_surface) = interpolate_for_nondim_position( dRhoTop, Pl(klm1), dRhoBot, Pl(klm1+1) )
-      endif
-      if (PoL(k_surface)>=1. .and. klm1<nk) then ! >= is really ==, when PoL==1 we point to the bottom of the cell
+      # Because we are looking left, the right surface, kr, is lighter than klm1+1andshould be denser than klm1
+      # unless we are still at the top of the left column (kl=1)
+      if (dRhoTop > 0. or kr+kl==0):
+        PoL[k_surface] = 0. # The right surface is lighter than anything in layer klm1
+        print("At surface or left surface is lighter than layer krm1")
+      elif (dRhoTop >= dRhoBot): # Left layer is unstratified
+        PoL[k_surface] = 1.
+        print("dRhoTop>=dRhoBot")
+      else:
+        # Linearly interpolate for the position between Pl(kl-1)andPl[kl] where the density difference
+        # between rightandleft is zero.
+        PoL[k_surface] = interpolate_for_nondim_position( dRhoTop, Pl[klm1], dRhoBot, Pl[klm1+1] )
+        print("Interpolating for position")
+
+      if (PoL[k_surface]>=1. and klm1<nk-1): # >= is really ==, when PoL==1 we point to the bottom of the cell
         klm1 = klm1 + 1
-        PoL(k_surface) = PoL(k_surface) - 1.
-      endif
-      if (real(klm1-lastK_left)+(PoL(k_surface)-lastP_left)<0.) then
-        PoL(k_surface) = lastP_left
+        PoL[k_surface] = PoL[k_surface] - 1.
+        print("Point to bottom of cell")
+
+      if ((klm1-lastK_left)+(PoL[k_surface]-lastP_left)<0.):
+        PoL[k_surface] = lastP_left
         klm1 = lastK_left
-      endif
-      KoL(k_surface) = klm1
-      if (kr <= nk) then
-        PoR(k_surface) = 0.
-        KoR(k_surface) = kr
-      else
-        PoR(k_surface) = 1.
-        KoR(k_surface) = nk
-      endif
-      if (kr <= nk) then
+        print("Rewind for some reason?")
+
+      KoL[k_surface] = klm1
+      if (kr <= nk - 1):
+        PoR[k_surface] = 0.
+        KoR[k_surface] = kr
+      else:
+        PoR[k_surface] = 1.
+        KoR[k_surface] = nk-1
+
+      if (kr <= nk-1):
         kr = kr + 1
-      else
-        reached_bottom = .true.
-        searching_right_column = .true.
-        searching_left_column = .false.
-      endif
-    elseif (searching_right_column) then
-      ! Interpolate for the neutral surface position within the right column, layer krm1
-      ! Potential density difference, rho(kr-1) - rho(kl) (should be negative)
-      dRhoTop = 0.5 * ( ( dRdTr(krm1) + dRdTl(kl) ) * ( Tr(krm1) - Tl(kl) ) &
-                     + ( dRdSr(krm1) + dRdSl(kl) ) * ( Sr(krm1) - Sl(kl) ) )
-      ! Potential density difference, rho(kr) - rho(kl) (will be positive)
-      dRhoBot = 0.5 * ( ( dRdTr(krm1+1) + dRdTl(kl) ) * ( Tr(krm1+1) - Tl(kl) ) &
-                   + ( dRdSr(krm1+1) + dRdSl(kl) ) * ( Sr(krm1+1) - Sl(kl) ) )
+      else:
+        reached_bottom = True
+        searching_right_column = True
+        searching_left_column = False
 
-      ! Because we are looking right, the left surface, kl, is lighter than krm1+1 and should be denser than krm1
-      ! unless we are still at the top of the right column (kr=1)
-      if (dRhoTop >= 0. .or. kr+kl==2) then
-        PoR(k_surface) = 0. ! The left surface is lighter than anything in layer krm1
-      elseif (dRhoTop >= dRhoBot) then ! Right layer is unstratified
-        PoR(k_surface) = 1.
-      else
-        ! Linearly interpolate for the position between Pr(kr-1) and Pr(kr) where the density difference
-        ! between right and left is zero.
-        PoR(k_surface) = interpolate_for_nondim_position( dRhoTop, Pr(krm1), dRhoBot, Pr(krm1+1) )
-      endif
-      if (PoR(k_surface)>=1. .and. krm1<nk) then ! >= is really ==, when PoR==1 we point to the bottom of the cell
+    elif (searching_right_column):
+      # Interpolate for the neutral surface position within the right column, layer krm1
+      # Potential density difference, rho(kr-1) - rho[kl] (should be negative)
+      dRhoTop = 0.5 * ( ( dRdTr[krm1] + dRdTl[kl] ) * ( Tr[krm1] - Tl[kl] )
+                    + ( dRdSr[krm1] + dRdSl[kl] ) * ( Sr[krm1] - Sl[kl] ) )
+      # Potential density difference, rho[kr] - rho[kl] (will be positive)
+      dRhoBot = 0.5 * ( ( dRdTr[krm1+1] + dRdTl[kl] ) * ( Tr[krm1+1] - Tl[kl] )
+                    + ( dRdSr[krm1+1] + dRdSl[kl] ) * ( Sr[krm1+1] - Sl[kl] ) )
+      print("Searching right interfaces (%d, %d): dRhoTop: %f dRhoBot: %f" % (krm1, krm1+1, dRhoTop, dRhoBot))
+
+      # Because we are looking right, the left surface, kl, is lighter than krm1+1andshould be denser than krm1
+      # unless we are still at the top of the right column (kr=1)
+      if (dRhoTop >= 0. or kr+kl==0):
+        PoR[k_surface] = 0. # The left surface is lighter than anything in layer krm1
+        print("At surface or left surface is lighter than layer krm1")
+      elif (dRhoTop >= dRhoBot): # Right layer is unstratified
+        PoR[k_surface] = 1.
+        print("dRhoTop>=dRhoBot")
+      else:
+        # Linearly interpolate for the position between Pr(kr-1)andPr[kr] where the density difference
+        # between rightandleft is zero.
+        PoR[k_surface] = interpolate_for_nondim_position( dRhoTop, Pr[krm1], dRhoBot, Pr[krm1+1] )
+        print("Interpolating for position")
+
+      if (PoR[k_surface]>=1. and krm1<nk-1): # >= is really ==, when PoR==1 we point to the bottom of the cell
         krm1 = krm1 + 1
-        PoR(k_surface) = PoR(k_surface) - 1.
-      endif
-      if (real(krm1-lastK_right)+(PoR(k_surface)-lastP_right)<0.) then
-        PoR(k_surface) = lastP_right
+        PoR[k_surface] = PoR[k_surface] - 1.
+        print("Point to bottom of cell")
+
+      if ((krm1-lastK_right)+(PoR[k_surface]-lastP_right)<0.):
+        PoR[k_surface] = lastP_right
         krm1 = lastK_right
-      endif
-      KoR(k_surface) = krm1
-      if (kl <= nk) then
-        PoL(k_surface) = 0.
-        KoL(k_surface) = kl
-      else
-        PoL(k_surface) = 1.
-        KoL(k_surface) = nk
-      endif
-      if (kl <= nk) then
+        print("Rewind for some reason?")
+
+      KoR[k_surface] = krm1
+      if (kl <= nk -1):
+        PoL[k_surface] = 0.
+        KoL[k_surface] = kl
+      else:
+        PoL[k_surface] = 1.
+        KoL[k_surface] = nk-1
+
+      if (kl <= nk-1):
         kl = kl + 1
-      else
-        reached_bottom = .true.
-        searching_right_column = .false.
-        searching_left_column = .true.
-      endif
-    else
-      stop 'Else what?'
-    endif
+      else:
+        reached_bottom = True
+        searching_right_column = False
+        searching_left_column = True
 
-    lastK_left = KoL(k_surface) ; lastP_left = PoL(k_surface)
-    lastK_right = KoR(k_surface) ; lastP_right = PoR(k_surface)
+    else:
+      print('Else what?')
 
-    ! Effective thickness
-    ! NOTE: This would be better expressed in terms of the layers thicknesses rather
-    ! than as differences of position - AJA
-    if (k_surface>1) then
-      hL = absolute_position(nk,Pl,KoL,PoL,k_surface) - absolute_position(nk,Pl,KoL,PoL,k_surface-1)
-      hR = absolute_position(nk,Pr,KoR,PoR,k_surface) - absolute_position(nk,Pr,KoR,PoR,k_surface-1)
-      if ( hL + hR > 0.) then
-        hEff(k_surface-1) = 2. * hL * hR / ( hL + hR ) ! Analogous of effective resistance for two resistors
-      else
-        hEff(k_surface-1) = 0.
-      endif
-    endif
+    lastK_left = KoL[k_surface] ; lastP_left = PoL[k_surface]
+    lastK_right = KoR[k_surface] ; lastP_right = PoR[k_surface]
 
-  enddo neutral_surfaces
+    # Effective thickness
+    #not: This would be better expressed in terms of the layers thicknesses rather
+    # than as differences of position - AJA
+    if (k_surface>0):
+      PoL_abs[k_surface] = absolute_position(Pl, KoL, PoL, k_surface)
+      PoR_abs[k_surface] = absolute_position(Pr, KoR, PoR, k_surface)
+      hL[k_surface] = absolute_position(Pl,KoL,PoL,k_surface) - absolute_position(Pl,KoL,PoL,k_surface-1)
+      hR[k_surface] = absolute_position(Pr,KoR,PoR,k_surface) - absolute_position(Pr,KoR,PoR,k_surface-1)
+      if ( hL[k_surface] + hR[k_surface] > 0.):
+        hEff[k_surface-1] = 2. * hL[k_surface] * hR[k_surface] / ( hL[k_surface] + hR[k_surface] ) # Analogous of effective resistance for two resistors
+      else:
+        hEff[k_surface-1] = 0.
 
-end subroutine find_neutral_surface_positions_continuous
+  return PoL, PoR, PoL_abs, PoR_abs, KoL, KoR, hEff, hL, hR
