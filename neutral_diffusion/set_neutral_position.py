@@ -233,150 +233,149 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
     dRdS_r[:,0] = dRdS_rt
     dRdS_r[:,1] = dRdS_rb
 
-    k_search_left = 0
-    k_search_right = 0
-    kl_r = 0 ; ki_r = 0 ; lastK_right = -1 ; lastP_right = -1.
-    kl_l = 0 ; ki_l = 0 ; lastK_left = -1 ; lastP_left = -1.
+    kl_left = 0
+    kl_right = 0
+    kl_right = 0 ; ki_right = 0 ; lastK_right = -1 ; lastP_right = -1.
+    kl_left = 0 ; ki_left = 0 ; lastK_left = -1 ; lastP_left = -1.
     reached_bottom = False
+    left_top_connected = False
+    right_top_connected = False
+    same_dir = False ; searching_left_column = False ; searching_right_column = False
 
     for k_surface in np.arange(0,4*nk):
 
-        print( "\nWorking on k_surface %d: Tl[%d,%d]: %f Tr[%d,%d]: %f" % (k_surface, kl_l, ki_l, Tl[kl_l,ki_l], kl_r, ki_r, Tr[kl_r,ki_r]))
-        dRho = 0.5 * ( ( dRdT_r[kl_r,ki_r] + dRdT_l[kl_l,ki_l] ) * ( Tr[kl_r,ki_r] - Tl[kl_l,ki_l] )
-                      + (dRdS_r[kl_r,ki_r] + dRdS_l[kl_l,ki_l] ) * ( Sr[kl_r,ki_r] - Sl[kl_l,ki_l] ) )
+        print( "\nWorking on k_surface %d: Tl[%d,%d]: %f Tr[%d,%d]: %f" % (k_surface, kl_left, ki_left, Tl[kl_left,ki_left], kl_right, ki_right, Tr[kl_right,ki_right]))
+        dRho = 0.5 * ( ( dRdT_r[kl_right,ki_right] + dRdT_l[kl_left,ki_left] ) * ( Tr[kl_right,ki_right] - Tl[kl_left,ki_left] )
+                      + (dRdS_r[kl_right,ki_right] + dRdS_l[kl_left,ki_left] ) * ( Sr[kl_right,ki_right] - Sl[kl_left,ki_left] ) )
         if not reached_bottom:
           if dRho < 0.:
+            same_dir = searching_left_column == True and searching_right_column == False
             searching_left_column = True
             searching_right_column = False
           elif dRho > 0.:
+            same_dir = searching_left_column == False and searching_right_column == True
             searching_right_column = True
             searching_left_column = False
           else:
-            if (kl_l+kl_r ==0 and ki_l+ki_r==0):
+            if (kl_left+kl_right ==0 and ki_left+ki_right==0):
               searching_left_column = True
               searching_right_column = False
             else:
+              same_dir = False
               searching_left_column = not searching_left_column
               searching_right_column = not searching_right_column
+        else:
+          same_dir = True
 
         if searching_left_column:
           search_dir = np.append(search_dir,0)
-          dRhoTop = 0.5 * ( ( dRdT_l[k_search_left,0] + dRdT_r[kl_r,ki_r] ) * ( Tl[k_search_left,0] - Tr[kl_r,ki_r] )
-                          + ( dRdS_l[k_search_left,0] + dRdS_r[kl_r,ki_r] ) * ( Sl[k_search_left,0] - Sr[kl_r,ki_r] ) )
-          dRhoBot = 0.5 * ( ( dRdT_l[k_search_left,1] + dRdT_r[kl_r,ki_r] ) * ( Tl[k_search_left,1] - Tr[kl_r,ki_r] )
-                          + ( dRdS_l[k_search_left,1] + dRdS_r[kl_r,ki_r] ) * ( Sl[k_search_left,1] - Sr[kl_r,ki_r] ) )
-          print("Searching left layer %d: dRhoTop: %f dRhoBot: %f" % (k_search_left, dRhoTop, dRhoBot))
-          # Set positions on left
-          if kl_r + kl_l + ki_r + ki_l == 0.:
-            PoL[k_surface] = 0.
-          elif dRhoTop > 0.:
-            PoL[k_surface] = 0.
-          elif dRhoTop >= dRhoBot: # Perfectly unstratified
-            if lastP_left == 0.: # We've already pointed to the top interface so now point to the bottom one
-              PoL[k_surface] = 1.
-              print("Unstratified, point bottom")
-            elif lastP_left == 1.:
-              PoL[k_surface] = 1.
-              print("Unstratified, point bottom")
-            else:             # Point to the top
-              PoL[k_surface] = 0.
-              print("Unstratified, point to top")
-          elif dRhoTop > dRhoBot: # This layer is unstable (bottom of layer is lighter than top). Point to bottom always
+          print("Searching from right layer %d Interface %d" % (kl_right, ki_right))
+          dRhoTop = 0.5 * ( ( dRdT_l[kl_left,0] + dRdT_r[kl_right,ki_right] ) * ( Tl[kl_left,0] - Tr[kl_right,ki_right] )
+                          + ( dRdS_l[kl_left,0] + dRdS_r[kl_right,ki_right] ) * ( Sl[kl_left,0] - Sr[kl_right,ki_right] ) )
+          dRhoBot = 0.5 * ( ( dRdT_l[kl_left,1] + dRdT_r[kl_right,ki_right] ) * ( Tl[kl_left,1] - Tr[kl_right,ki_right] )
+                          + ( dRdS_l[kl_left,1] + dRdS_r[kl_right,ki_right] ) * ( Sl[kl_left,1] - Sr[kl_right,ki_right] ) )
+          if kl_left > 0:
+            dRhoTopm1 = 0.5 * ( ( dRdT_l[kl_left-1,1] + dRdT_r[kl_right,ki_right] ) * ( Tl[kl_left-1,1] - Tr[kl_right,ki_right] )
+                              + ( dRdS_l[kl_left-1,1] + dRdS_r[kl_right,ki_right] ) * ( Sl[kl_left-1,1] - Sr[kl_right,ki_right] ) )
+          else:
+            dRhoTopm1 = dRhoTop
+
+          KoL[k_surface] = kl_left
+          KoR[k_surface] = kl_right
+
+          if lastP_left == 1. and dRhoTopm1 == 0.:
+            print("Search across discontinuity")
+            KoL[k_surface] = lastK_left
             PoL[k_surface] = 1.
-          elif dRhoBot > 0. and dRhoTop >0.: # Neutral surface lgihter than anything in layer, point to bottom
-            PoL[k_surface] = 0.
-          else:
-            PoL[k_surface] = interpolate_for_nondim_position( dRhoTop, Pl[k_search_left,0], dRhoBot, Pl[k_search_left,1] )
-          KoL[k_surface] = k_search_left
-          KoR[k_surface] = kl_r
+            PoR[k_surface] = np.real(ki_right)
+            if ki_right == 0:
+              ki_right = 1
+              print("Search bottom of same layer %d" % kl_right)
+            elif (ki_right == 1) and (kl_right<nk-1):
+              ki_right = 0
+              kl_right = kl_right + 1
+              print("Search top of next layer %d" % kl_right)
+            elif (kl_right == nk-1) and (ki_right == 1): # Reached bottom
+              reached_bottom = True
+              searching_right_column = True
+              searching_left_column = False
+              print("Reached bottom")
+            else:
+              print("AHHHH!")
 
-          lastP_left = PoL[k_surface]
-          if PoL[k_surface] == 1. and kl_l < nk-1:
-            k_search_left = k_search_left + 1
-#            k_search_right = k_search_right + 1
-            lastP_left = -1
-
-          # Set position on right
-          if ki_r == 0:
-            PoR[k_surface] = 0.
           else:
-            PoR[k_surface] = 1.
+            print("Searching in left layer %d: dRhoTop: %f dRhoBot: %f" % (kl_left, dRhoTop, dRhoBot))
+            kl_right, ki_right, kl_left, ki_left, PoR[k_surface], PoL[k_surface],       \
+              reached_bottom, searching_right_column, searching_left_column =    \
+              search_other_column(dRhoTop, dRhoBot, lastP_left, lastK_left, kl_left, ki_left, \
+              Pl[kl_left,0], Pl[kl_left,1], kl_right, ki_right, nk,               \
+              reached_bottom, searching_right_column, searching_left_column, same_dir)
+#          if reached_bottom:
+#            KoL[k_surface] = nk-1
+#            PoL[k_surface] = 1.
 
-          # Determine which interface on the right will need to be connected
-          if ki_r == 0:
-            ki_r = 1
-          elif kl_r < (nk-1): # Set to top interface of next layer unless at the bottom of the column
-            ki_r = 0
-            kl_r = kl_r + 1
-          elif kl_r == (nk-1) and ki_r == 1: # Reached the bottom
-            reached_bottom = True
-            searching_right_column = True
-            searching_left_column = False
-          else:
-            print("AHHHH!")
 
         elif (searching_right_column):
           search_dir = np.append(search_dir,1)
-          dRhoTop = 0.5 * ( ( dRdT_r[k_search_right,0] + dRdT_l[kl_l,ki_l] ) * ( Tr[k_search_right,0] - Tl[kl_l,ki_l] )
-                          + ( dRdS_r[k_search_right,0] + dRdS_l[kl_l,ki_l] ) * ( Sr[k_search_right,0] - Sl[kl_l,ki_l] ) )
-          dRhoBot = 0.5 * ( ( dRdT_r[k_search_right,1] + dRdT_l[kl_l,ki_l] ) * ( Tr[k_search_right,1] - Tl[kl_l,ki_l] )
-                          + ( dRdS_r[k_search_right,1] + dRdS_l[kl_l,ki_l] ) * ( Sr[k_search_right,1] - Sl[kl_l,ki_l] ) )
-          print("Searching right layer %d: dRhoTop: %f dRhoBot: %f" % (k_search_right, dRhoTop,dRhoBot))
-          # Set positions on right
-          if k_search_right + ki_r == 0.:
-            PoR[k_surface] = 0.
-          elif dRhoTop > 0.:
-            PoR[k_surface] == 0.
-          elif dRhoTop >= dRhoBot: # Perfectly unstratified
-            if lastP_right == 0.: # We've already pointed to the top interface so now point to the bottom one
-              PoR[k_surface] = 1.
-              print("Unstratified, point bottom")
-            elif lastP_right == 1.:
-              PoR[k_surface] = 1.
-              print("Unstratified, point bottom")
-            else:             # Point to the top
-              PoR[k_surface] = 0.
-              print("Unstratified, point top")
-          elif dRhoTop > dRhoBot: # This layer is unstable (bottom of layer is lighter than top). Point to bottom always
+          print("Searching from left layer %d interface %d" % (kl_left, ki_left))
+          dRhoTop = 0.5 * \
+            ( ( dRdT_r[kl_right,0] + dRdT_l[kl_left,ki_left] ) * ( Tr[kl_right,0] - Tl[kl_left,ki_left] )
+            + ( dRdS_r[kl_right,0] + dRdS_l[kl_left,ki_left] ) * ( Sr[kl_right,0] - Sl[kl_left,ki_left] ) )
+          dRhoBot = 0.5 * \
+            ( ( dRdT_r[kl_right,1] + dRdT_l[kl_left,ki_left] ) * ( Tr[kl_right,1] - Tl[kl_left,ki_left] )
+            + ( dRdS_r[kl_right,1] + dRdS_l[kl_left,ki_left] ) * ( Sr[kl_right,1] - Sl[kl_left,ki_left] ) )
+          if kl_right > 0:
+            dRhoTopm1 = 0.5 * \
+              ( ( dRdT_r[kl_right-1,1] + dRdT_l[kl_left,ki_left] ) * ( Tr[kl_right-1,1] - Tl[kl_left,ki_left] )
+              + ( dRdS_r[kl_right-1,1] + dRdS_l[kl_left,ki_left] ) * ( Sr[kl_right-1,1] - Sl[kl_left,ki_left] ) )
+          else:
+            dRhoTopm1 = dRhoTop
+
+
+          KoL[k_surface] = kl_left
+          KoR[k_surface] = kl_right
+
+          if lastP_right == 1. and dRhoTopm1 == 0.:
+            print("Search across discontinuity")
+            KoR[k_surface] = lastK_right
             PoR[k_surface] = 1.
-          elif dRhoBot > 0. and dRhoTop >0.: # Neutral surface lgihter than anything in layer, point to bottom
-            PoR[k_surface] = 0.
-          else:
-            PoR[k_surface] = interpolate_for_nondim_position( dRhoTop, Pr[k_search_right,0], dRhoBot, Pr[k_search_right,1] )
-
-          lastP_right = PoR[k_surface]
-          KoL[k_surface] = kl_l
-          KoR[k_surface] = k_search_right
-
-          if PoR[k_surface] == 1.:
-            k_search_right = k_search_right + 1
-            lastP_right = -1
-
-          # Set position on left
-          if ki_l == 0:
-            PoL[k_surface] = 0.
-          else:
-            PoL[k_surface] = 1.
-
-          # Determine which interface on the left will need to be connected
-          if ki_l == 0: # Move to bottom interface of same layer
-            ki_l = 1
-          elif kl_l < (nk-1): # Set to top interface of next layer unless at the bottom of the column
-            ki_l = 0
-            kl_l = kl_l + 1
-          elif kl_l == (nk-1) and ki_l == 1: # Reached the bottom
+            PoL[k_surface] = np.real(ki_left)
+            if ki_left == 0:
+              ki_left = 1
+              print("Search bottom of same layer %d" % kl_left)
+            elif (ki_left == 1) and (kl_left<nk-1):
+              ki_left = 0
+              kl_left = kl_left + 1
+              print("Search top of next layer %d" % kl_left)
+            elif (kl_left == nk-1) and (ki_left == 1): # Reached bottom
               reached_bottom = True
-              searching_right_column = False
               searching_left_column = True
+              searching_right_column = False
+              print("Reached bottom")
+            else:
+              print("AHHHH!")
           else:
-            print("AHHHH!")
+            print("Searching in right layer %d: dRhoTop: %f dRhoBot: %f" % (kl_right, dRhoTop,dRhoBot))
+            kl_left, ki_left, kl_right, ki_right, PoL[k_surface], PoR[k_surface],           \
+              reached_bottom, searching_left_column, searching_right_column =        \
+              search_other_column(dRhoTop, dRhoBot, lastP_right, lastK_right, kl_right, ki_right,  \
+              Pr[kl_right,0], Pr[kl_right,1], kl_left, ki_left, nk,                   \
+              reached_bottom, searching_left_column, searching_right_column, same_dir)
+#          if reached_bottom:
+#            print("Reacjed bottom")
+#            KoR[k_surface] = nk-1
+#            PoR[k_surface] = 1.
+
         else:
             print("ERROR")
 
-        print("Position on left : %f" % PoL[k_surface])
-        print("Position on right: %f" % PoR[k_surface])
+        lastP_right = PoR[k_surface]
+        lastK_right = KoR[k_surface]
+        lastP_left = PoL[k_surface]
+        lastK_left = KoL[k_surface]
+        print("Position on left layer %d: %f" % (KoL[k_surface],PoL[k_surface]))
+        print("Position on right layer %d: %f" % (KoR[k_surface],PoR[k_surface]))
         if k_surface>0:
-          print(Pres_l,KoL)
           PoL_abs[k_surface] = absolute_position(Pres_l, KoL, PoL, k_surface)
           PoR_abs[k_surface] = absolute_position(Pres_r, KoR, PoR, k_surface)
           hL[k_surface] = absolute_position(Pres_l, KoL, PoL, k_surface) - absolute_position(Pres_l, KoL, PoL, k_surface-1)
@@ -387,6 +386,80 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
             hEff[k_surface-1] = 0.
           print("hL: %f hR: %f hEff: %f" % (hL[k_surface],hR[k_surface],hEff[k_surface-1]))
     return PoL, PoR, PoL_abs, PoR_abs, KoL, KoR, hEff, hL, hR, search_dir
+
+def search_other_column(dRhoTop, dRhoBot, other_lastP, other_lastK, other_kl, other_ki, other_Ptop, other_Pbot, this_kl, this_ki, nk, \
+    reached_bottom, searching_this_column, searching_other_column, same_dir):
+#  if dRhoTop >= 0. or (other_kl==0 and other_ki==0):
+#    P = 0.
+#  elif dRhoTop >= dRhoBot:
+#    P = 1.
+#  else:
+#    P = interpolate_for_nondim_position( dRhoTop, other_Ptop, dRhoBot, other_Pbot )
+
+#  if dRhoTop>0. or (this_ki + this_kl == 0):
+#    P = 0.
+#  elif dRhoTop >= dRhoBot:
+#    if other_lastP == 0.: # We've already pointed to the top interface so now point to the bottom one
+#      P = 1.
+#      print("Unstratified, point bottom")
+#    elif other_lastP == 1.:
+#      P = 1.
+#      print("Unstratified, point bottom")
+#    else:             # Point to the top
+#      P = 0.
+#      print("Unstratified, point top")
+#  elif dRhoTop > dRhoBot: # This layer is unstable (bottom of layer is lighter than top). Point to bottom always
+#    P = 1.
+#  elif dRhoBot > 0. and dRhoTop >0.: # Neutral surface lgihter than anything in layer, point to bottom
+#    P = 1.
+#    print("Lighter than anything in layer")
+#  else:
+#    P = interpolate_for_nondim_position( dRhoTop, other_Ptop, dRhoBot, other_Pbot )
+
+# Search for the other column
+  if dRhoTop>0. or (other_ki == 0 and other_kl == 0):
+    other_P = 0.
+    print("At top or dRhoTop>0")
+  # Work on the special case of the bottom
+  elif dRhoTop == dRhoBot:
+    if same_dir:
+      other_P = other_lastP
+      other_kl = other_lastK
+      print("Layer perfectly unstratified, same search direction")
+    else:
+      other_P = np.real(this_ki) # Connect bottom interface to bottom interface or top to top
+      print("Layer perfectly unstratified, different search direction")
+
+  elif dRhoTop > dRhoBot:
+    other_P = 1.
+    print("Layer lighter than surface")
+  else:
+    other_P = interpolate_for_nondim_position( dRhoTop, other_Ptop, dRhoBot, other_Pbot )
+    print("Interpolating for position")
+
+## Increment the index of the other column
+#  if other_P == 1. and other_kl < nk-1:
+#    other_kl = other_kl + 1
+#    other_ki = 0
+
+# Deal with positions and incrementing of the searched from interface
+  this_P = np.real(this_ki)
+  if this_ki == 0:
+    this_ki = 1
+    print("Search bottom of same layer %d" % this_kl)
+  elif (this_ki == 1) and (this_kl<nk-1):
+    this_ki = 0
+    this_kl = this_kl + 1
+    print("Search top of next layer %d" % this_kl)
+  elif (this_kl == nk-1) and (this_ki == 1): # Reached bottom
+    reached_bottom = True
+    searching_this_column = True
+    searching_other_column = False
+    print("Reached bottom")
+  else:
+    print("AHHHH!")
+
+  return this_kl, this_ki, other_kl, other_ki, this_P, other_P, reached_bottom, searching_this_column, searching_other_column
 
 def find_neutral_surface_positions_continuous(Pl, Tl, Sl, dRdTl, dRdSl, Pr, Tr, Sr, dRdTr, dRdSr):
   nk = Pl.size - 1
