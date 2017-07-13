@@ -233,8 +233,6 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
     dRdS_r[:,0] = dRdS_rt
     dRdS_r[:,1] = dRdS_rb
 
-    kl_left = 0
-    kl_right = 0
     kl_right = 0 ; ki_right = 0 ; lastK_right = -1 ; lastP_right = -1.
     kl_left = 0 ; ki_left = 0 ; lastK_left = -1 ; lastP_left = -1.
     reached_bottom = False
@@ -244,9 +242,9 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
 
     for k_surface in np.arange(0,4*nk):
 
-        print( "\nWorking on k_surface %d: Tl[%d,%d]: %f Tr[%d,%d]: %f" % (k_surface, kl_left, ki_left, Tl[kl_left,ki_left], kl_right, ki_right, Tr[kl_right,ki_right]))
         dRho = 0.5 * ( ( dRdT_r[kl_right,ki_right] + dRdT_l[kl_left,ki_left] ) * ( Tr[kl_right,ki_right] - Tl[kl_left,ki_left] )
                       + (dRdS_r[kl_right,ki_right] + dRdS_l[kl_left,ki_left] ) * ( Sr[kl_right,ki_right] - Sl[kl_left,ki_left] ) )
+        print( "\nWorking on k_surface %d: Tl[%d,%d]: %f Tr[%d,%d]: %f dRho: %f" % (k_surface, kl_left, ki_left, Tl[kl_left,ki_left], kl_right, ki_right, Tr[kl_right,ki_right],dRho))
         if not reached_bottom:
           if dRho < 0.:
             same_dir = searching_left_column == True and searching_right_column == False
@@ -420,7 +418,6 @@ def search_other_column(dRhoTop, dRhoBot, other_lastP, other_lastK, other_kl, ot
   if dRhoTop>0. or (other_ki == 0 and other_kl == 0):
     other_P = 0.
     print("At top or dRhoTop>0")
-  # Work on the special case of the bottom
   elif dRhoTop == dRhoBot:
     if same_dir:
       other_P = other_lastP
