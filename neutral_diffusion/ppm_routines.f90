@@ -3,7 +3,7 @@ module PPM_routines
 
 implicit none
 
-logical, parameter :: debug_this_module = .false.
+logical, parameter :: debug_this_module = .true.
 
 contains
 
@@ -424,29 +424,20 @@ end subroutine find_neutral_surface_positions_continuous
 
 !> Higher order version of find_neutral_surface_positions. Returns positions within left/right columns
 !! of combined interfaces using intracell reconstructions of T/S
-subroutine find_neutral_surface_positions_discontinuous(nk, &
-                                Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dRdT_lt, dRdT_lb, dRdS_lt, dRdS_lb, &
-                                Pres_r, Tint_rt, Tint_rb, Sint_rt, Sint_rb, dRdT_rt, dRdT_rb, dRdS_rt, dRdS_rb, &
-                                PoL, PoR, KoL, KoR, hEff)
+subroutine find_neutral_surface_positions_discontinuous(nk, Pres_l, Tl, Sl, dRdT_l, dRdS_l, &
+                                                        Pres_r, Tr, Sr, dRdT_r, dRdS_r,  &
+                                                        PoL, PoR, KoL, KoR, hEff)
   integer,                    intent(in)    :: nk      !< Number of levels
   real, dimension(nk+1),      intent(in)    :: Pres_l  !< Left-column interface pressure (Pa)
-  real, dimension(nk),        intent(in)    :: Tint_lt !< Left-column top interface potential temperature (degC)
-  real, dimension(nk),        intent(in)    :: Tint_lb !< Left-column bottom interface potential temperature (degC)
-  real, dimension(nk),        intent(in)    :: Sint_lt !< Left-column top interface salinity (ppt)
-  real, dimension(nk),        intent(in)    :: Sint_lb !< Left-column bottom interface salinity (ppt)
-  real, dimension(nk),        intent(in)    :: dRdT_lt !< Left-column, top interface dRho/dT (kg/m3/degC)
-  real, dimension(nk),        intent(in)    :: dRdT_lb !< Left-column, bottom interface dRho/dT (kg/m3/degC)
-  real, dimension(nk),        intent(in)    :: dRdS_lt !< Left-column, top interface dRho/dS (kg/m3/ppt)
-  real, dimension(nk),        intent(in)    :: dRdS_lb !< Left-column, bottom interface  dRho/dS (kg/m3/ppt)
+  real, dimension(nk,2),      intent(in)    :: Tl      !< Left-column top interface potential temperature (degC)
+  real, dimension(nk,2),      intent(in)    :: Sl      !< Left-column top interface salinity (ppt)
+  real, dimension(nk,2),      intent(in)    :: dRdT_l  !< Left-column, top interface dRho/dT (kg/m3/degC)
+  real, dimension(nk,2),      intent(in)    :: dRdS_l  !< Left-column, top interface dRho/dS (kg/m3/ppt)
   real, dimension(nk+1),      intent(in)    :: Pres_r  !< Right-column interface pressure (Pa)
-  real, dimension(nk),        intent(in)    :: Tint_rt !< Right-column top interface potential temperature (degC)
-  real, dimension(nk),        intent(in)    :: Tint_rb !< Right-column bottom interface potential temperature (degC)
-  real, dimension(nk),        intent(in)    :: Sint_rt !< Right-column top interface salinity (ppt)
-  real, dimension(nk),        intent(in)    :: Sint_rb !< Right-column bottom interface salinity (ppt)
-  real, dimension(nk),        intent(in)    :: dRdT_rt !< Right-column, top interface dRho/dT (kg/m3/degC)
-  real, dimension(nk),        intent(in)    :: dRdT_rb !< Right-column, bottom interface dRho/dT (kg/m3/degC)
-  real, dimension(nk),        intent(in)    :: dRdS_rt !< Right-column, top interface dRho/dS (kg/m3/ppt)
-  real, dimension(nk),        intent(in)    :: dRdS_rb !< Right-column, bottom interface  dRho/dS (kg/m3/ppt)
+  real, dimension(nk,2),      intent(in)    :: Tr      !< Right-column top interface potential temperature (degC)
+  real, dimension(nk,2),      intent(in)    :: Sr      !< Right-column top interface salinity (ppt)
+  real, dimension(nk,2),      intent(in)    :: dRdT_r  !< Right-column, top interface dRho/dT (kg/m3/degC)
+  real, dimension(nk,2),      intent(in)    :: dRdS_r  !< Right-column, top interface dRho/dS (kg/m3/ppt)
   real, dimension(4*nk),      intent(inout) :: PoL     !< Fractional position of neutral surface within layer KoL of left column
   real, dimension(4*nk),      intent(inout) :: PoR     !< Fractional position of neutral surface within layer KoR of right column
   integer, dimension(4*nk),   intent(inout) :: KoL     !< Index of first left interface above neutral surface
@@ -467,39 +458,18 @@ subroutine find_neutral_surface_positions_discontinuous(nk, &
 
   ! Vectors with all the values of the discontinuous reconstruction.
   ! Dimensions are [number of layers x number of interfaces]. Second dimension = 1 for top interface, = 2 for bottom
-  real, dimension(nk,2) :: Pl, Pr, Sl, Sr, Tl, Tr, dRdT_l, dRdS_l, dRdT_r, dRdS_r
+  real, dimension(nk,2) :: Pl, Pr
+!  real, dimension(nk,2) :: Sl, Sr, Tl, Tr, dRdT_l, dRdS_l, dRdT_r, dRdS_r
 
-  write(*,*) "Left column"
   ! Create vectors for left column reconstructions
   do kl_left = 1, nk
     Pl(kl_left,1) = Pres_l(kl_left)
     Pl(kl_left,2) = Pres_l(kl_left+1)
-    Tl(kl_left,1) = Tint_lt(kl_left)
-    Tl(kl_left,2) = Tint_lb(kl_left)
-    Sl(kl_left,1) = Sint_lt(kl_left)
-    Sl(kl_left,2) = Sint_lb(kl_left)
-    dRdT_l(kl_left,1) = dRdT_lt(kl_left)
-    dRdT_l(kl_left,2) = dRdT_lb(kl_left)
-    dRdS_l(kl_left,1) = dRdS_lt(kl_left)
-    dRdS_l(kl_left,2) = dRdS_lb(kl_left)
-    write(*,*) Tint_lt(kl_left), Tint_lb(kl_left), Sint_lt(kl_left), Sint_lb(kl_left)
-    write(*,*) Tl(kl_left,1), Tl(kl_left,2), Sl(kl_left,1), Sl(kl_left,2)
   enddo
   ! Create vectors for right column reconstructions
-  write(*,*) "Right column"
   do kl_right = 1, nk
     Pr(kl_right,1) = Pres_r(kl_right)
     Pr(kl_right,2) = Pres_r(kl_right+1)
-    Tr(kl_right,1) = Tint_rt(kl_right)
-    Tr(kl_right,2) = Tint_rb(kl_right)
-    Sr(kl_right,1) = Sint_rt(kl_right)
-    Sr(kl_right,2) = Sint_rb(kl_right)
-    dRdT_r(kl_right,1) = dRdT_rt(kl_right)
-    dRdT_r(kl_right,2) = dRdT_rb(kl_right)
-    dRdS_r(kl_right,1) = dRdS_rt(kl_right)
-    dRdS_r(kl_right,2) = dRdS_rb(kl_right)
-    write(*,*) Tint_rt(kl_right), Tint_rb(kl_right), Sint_rt(kl_right), Sint_rb(kl_right)
-    write(*,*) Tr(kl_right,1), Tr(kl_right,2), Sr(kl_right,1), Sr(kl_right,2)
   enddo
 
   ! Initialize variables for the search
@@ -517,8 +487,8 @@ subroutine find_neutral_surface_positions_discontinuous(nk, &
     dRho = 0.5 * &
       ( ( dRdT_r(kl_right,ki_right) + dRdT_l(kl_left,ki_left) ) * ( Tr(kl_right,ki_right) - Tl(kl_left,ki_left) ) &
       + ( dRdS_r(kl_right,ki_right) + dRdS_l(kl_left,ki_left) ) * ( Sr(kl_right,ki_right) - Sl(kl_left,ki_left) ) )
-    write(*,'(A,I2,A,F6.3,A,I2,A,I2,A,I2,A,I2)') "k_surface=",k_surface,"  dRho=",dRho,"  kl_left=",kl_left,   &
-      "  ki_left=",ki_left,"  kl_right=",kl_right, "  ki_right=",ki_right
+    if (debug_this_module)  write(*,'(A,I2,A,E12.4,A,I2,A,I2,A,I2,A,I2)') "k_surface=",k_surface,"  dRho=",dRho, &
+      "  kl_left=",kl_left, "  ki_left=",ki_left,"  kl_right=",kl_right, "  ki_right=",ki_right
     ! Which column has the lighter surface for the current indexes, kr and kl
     if (.not. reached_bottom) then
       if (dRho < 0.) then
@@ -530,12 +500,13 @@ subroutine find_neutral_surface_positions_discontinuous(nk, &
         searching_right_column = .true.
         searching_left_column = .false.
       else ! dRho == 0.
-        if (kl_left + kl_left + ki_left + ki_right == 4) then ! Still at surface
+        if ((kl_left + kl_left == 2) .and. (ki_left + ki_right == 2)) then ! Still at surface
           searching_left_column = .true.
           searching_right_column = .false.
         else ! Not the surface so we simply change direction
-          searching_left_column = .not.  searching_left_column
-          searching_right_column = .not.  searching_right_column
+          same_direction = .false.
+          searching_left_column = .not. searching_left_column
+          searching_right_column = .not. searching_right_column
         endif
       endif
     else
@@ -559,25 +530,26 @@ subroutine find_neutral_surface_positions_discontinuous(nk, &
       else
         dRhoTopm1 = dRhoTop
       endif
-      write(*,'(A,I2,A,F6.2,A,F6.2,A,F6.2)') "Searching left layer", kl_left, ":  dRhoTopm1=", dRhoTopm1, &
-                                             "  dRhoTop=", dRhoTop, "  dRhoBot=", dRhoBot
-      write(*,'(A,I2,X,I2)') "Searching from: ", kl_right, ki_right
+      if (debug_this_module)  write(*,'(A,I2,A,E12.4,A,E12.4,A,E12.4)') "Searching left layer ", kl_left,  &
+        ":  dRhoTopm1=", dRhoTopm1, "  dRhoTop=", dRhoTop, "  dRhoBot=", dRhoBot
+      if (debug_this_module)  write(*,'(A,I2,X,I2)') "Searching from: ", kl_right, ki_right
+
       KoL(k_surface) = kl_left
-      KoR(k_surface) = kl_right
+      KoR(k_surfacE) = kl_right
 
       ! Perform a check to make sure that the neutral surface does not connect to top of discontinuity
       if ( (lastP_left == 1.) .and. (dRhoTopm1 == 0.) ) then
         KoL(k_surface) = lastK_left
         PoL(k_surface) = 1.
         PoR(k_surface) = REAL(ki_right-1)
-        write(*,*) "Searching across discontinuity"
+        if (debug_this_module)  write(*,*) "Searching across discontinuity"
       ! Search within the layer for the neutral surface
       else
         KoL(k_surface) = kl_left
         call search_other_column_discontinuous(dRhoTop, dRhoBot, same_direction, lastP_left, lastK_left, &
                                  Pl(kl_left,1), Pl(kl_left,2), ki_left, ki_right, kl_left, PoL(k_surface))
-        PoR(k_surface) = REAL(ki_right-1)
       endif
+      KoR(k_surface) = kl_right
       PoR(k_surface) = REAL(ki_right-1)
       call increment_interface(nk, kl_right, ki_right, reached_bottom, searching_right_column, searching_left_column)
 
@@ -597,9 +569,11 @@ subroutine find_neutral_surface_positions_discontinuous(nk, &
       else
         dRhoTopm1 = dRhoTop
       endif
-      write(*,'(A,I2,A,F6.2,A,F6.2,A,F6.2)') "Searching right layer", kl_right, ":  dRhoTopm1=", dRhoTopm1, &
-                                             "  dRhoTop=", dRhoTop, "  dRhoBot=", dRhoBot
-      write(*,'(A,I2,X,I2)') "Searching from: ", kl_left, ki_left
+      if (debug_this_module)  write(*,'(A,I2,A,E12.4,A,E12.4,A,E12.4)') "Searching right layer ", kl_right, &
+        ":  dRhoTopm1=", dRhoTopm1, "  dRhoTop=", dRhoTop, "  dRhoBot=", dRhoBot
+
+      if (debug_this_module)  write(*,'(A,I2,X,I2)') "Searching from: ", kl_left, ki_left
+
       KoL(k_surface) = kl_left
       KoR(k_surface) = kl_right
 
@@ -607,15 +581,16 @@ subroutine find_neutral_surface_positions_discontinuous(nk, &
       if ( (lastP_right == 1.) .and. (dRhoTopm1 == 0.) ) then
         KoR(k_surface) = lastK_right
         PoR(k_surface) = 1.
-        PoL(k_surface) = REAL(ki_left-1)
-        write(*,*) "Searching across discontinuity"
+        PoL(k_surface) = REAL(ki_left - 1)
+        if (debug_this_module)  write(*,*) "Searching across discontinuity"
       ! Search within the layer for the neutral surface
       else
         KoR(k_surface) = kl_right
         call search_other_column_discontinuous(dRhoTop, dRhoBot, same_direction, lastP_right, lastK_right, &
                                  Pr(kl_right,1), Pr(kl_right,2), ki_right, ki_left, kl_right, PoR(k_surface))
-        PoL(k_surface) = REAL(ki_left-1)
       endif
+      KoL(k_surface) = kl_left
+      PoL(k_surface) = REAL(ki_left-1)
       call increment_interface(nk, kl_left, ki_left, reached_bottom, searching_left_column, searching_right_column)
 
       ! Potential density difference, rho(kr) - rho(kl) (will be positive)
@@ -627,9 +602,10 @@ subroutine find_neutral_surface_positions_discontinuous(nk, &
 !    if (lastK_right == KoR(k_surface))  PoR(k_surface) = MAX(PoR(k_surface),lastP_right)
     lastK_left = KoL(k_surface)  ; lastP_left = PoL(k_surface)
     lastK_right = KoR(k_surface) ; lastP_right = PoR(k_surface)
-    write(*,'(A,I2,A,F6.2,A,I2,A,F6.2)') "KoL:", KoL(k_surface), " PoL:", PoL(k_surface), "     KoR:", &
+
+    if (debug_this_module)  write(*,'(A,I2,A,F6.2,A,I2,A,F6.2)') "KoL:", KoL(k_surface), " PoL:", PoL(k_surface), "     KoR:", &
       KoR(k_surface), " PoR:", PoR(k_surface)
-    write(*,*)
+    if (debug_this_module)  write(*,*)
     ! Effective thickness
     ! NOTE: This would be better expressed in terms of the layers thicknesses rather
     ! than as differences of position - AJA
@@ -648,8 +624,7 @@ subroutine find_neutral_surface_positions_discontinuous(nk, &
   enddo neutral_surfaces
 
 end subroutine find_neutral_surface_positions_discontinuous
-
-!> Converts non-dimensional position within a layer to absolute position (for debuggingV
+!> Converts non-dimensional position within a layer to absolute position (for debugging)
 real function absolute_position_discontinuous(n,Pint,Karr,NParr,k_surface)
   integer, intent(in) :: n            !< Number of levels
   real,    intent(in) :: Pint(n+1)    !< Position of interfaces (Pa)
@@ -660,7 +635,7 @@ real function absolute_position_discontinuous(n,Pint,Karr,NParr,k_surface)
   integer :: k_surface, k
 
   k = Karr(k_surface)
-  if (k>4*n) stop 'absolute_position: k>nk is out of bounds!'
+  if (k>n) stop 'absolute_position: k>nk is out of bounds!'
   absolute_position_discontinuous = Pint(k) + NParr(k_surface) * ( Pint(k+1) - Pint(k) )
 
 end function absolute_position_discontinuous
@@ -683,11 +658,10 @@ subroutine increment_interface(nk, kl, ki, reached_bottom, searching_this_column
     searching_this_column = .true.
     searching_other_column = .false.
   else
-!    call MOM_error(FATAL,"Unanticipated eventuality in increment_interface")
+    !        call MOM_error(FATAL,"Unanticipated eventuality in increment_interface")
   endif
 
 end subroutine increment_interface
-
 !< Searches the "other" (searched) column for the position of the neutral surface
 subroutine search_other_column_discontinuous(dRhoTop, dRhoBot, same_direction, other_lastP, other_lastK, &
     other_Ptop, other_Pbot, other_ki, this_ki, other_kl, other_P)
@@ -706,28 +680,22 @@ subroutine search_other_column_discontinuous(dRhoTop, dRhoBot, same_direction, o
   ! Check if everything in this layer is denser than neutral surface or if at the top of the water column
   if ( (dRhoTop > 0.) .or. ( (other_kl == 1 .and. other_ki == 1 ) )) then
     other_P = 0.
-    write(*,*) "dRhoTop > 0 or at surface"
+    if (debug_this_module)  write(*,*) "dRhoTop > 0 or at surface"
   elseif (dRhoTop == dRhoBot) then ! Layer is perfectly unstratified
     if (same_direction) then ! Always point to the same place as the last neutral surface
       other_P = other_lastP
       other_kl = other_lastK
-      write(*,*) "Perfectly unstratified same direction"
+      if (debug_this_module)  write(*,*) "Perfectly unstratified same direction"
     else
       other_P = REAL(this_ki-1) ! Connect a top interface to a top interface, bottom to bottom
-      write(*,*) "Perfectly unstratified different direction"
+      if (debug_this_module)  write(*,*) "Perfectly unstratified different direction"
     endif
   elseif (dRhoTop > dRhoBot) then ! Layer is unstably stratified
     other_P = 1.
-    write(*,*) "dRhoTop > dRhoBot"
+    if (debug_this_module)  write(*,*) "dRhoTop > dRhoBot"
   else ! Surface exists somewhere in between the interfaces
-    write(*,*) dRhoTop, other_Ptop, dRhoBot, other_Pbot
-!    if (other_Ptop>=other_Pbot) then
-!      other_P = 0.
-!    else
       other_P = interpolate_for_nondim_position(dRhoTop, other_Ptop, dRhoBot, other_Pbot)
-!    endif
-
-    write(*,*) "Interpolating for position"
+    if (debug_this_module)  write(*,*) "Interpolating for position"
   endif
 
 end subroutine search_other_column_discontinuous

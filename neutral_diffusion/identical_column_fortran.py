@@ -82,7 +82,7 @@ drds_rt = np.zeros(nk) ; drds_rb = np.zeros(nk)
 
 hl = np.array([10.,10.,10.,10.])
 hr = np.array([10.,10.,10.,10.])
-Tr = np.array([20.,16.,12.,10.]) ; Sr = np.zeros_like(Tr)
+Tr = np.array([20.,16.,12.,10.])+2 ; Sr = np.zeros_like(Tr)
 Tl = np.array([20.,16.,12.,10.]) ; Sl = np.zeros_like(Tl)
 zil, zl_t, zl_b, zl_c, Tl_t, Tl_b = construct_column(hl, Tl)
 zir, zr_t, zr_b, zr_c, Tr_t, Tr_b = construct_column(hr, Tr)
@@ -96,9 +96,23 @@ KoL = np.zeros(4*hl.size,dtype=np.int32) ; PoL = np.zeros(4*hl.size,dtype=np.flo
 KoR = np.zeros(4*hl.size,dtype=np.int32) ; PoR = np.zeros(4*hl.size,dtype=np.float32)
 hEff = np.zeros(4*hl.size-1,dtype=np.float32)
 
+Til = np.zeros((nk,2)) ; Tir = np.zeros((nk,2))
+Sil = np.zeros((nk,2)) ; Sir = np.zeros((nk,2))
+drdt_l = np.ones((nk,2))*-1 ; drdt_r = np.ones((nk,2))*-1
+drds_l = np.zeros((nk,2)) ; drds_r = np.zeros((nk,2))
+
+Til[:,0] = Tl_t ; Til[:,1] = Tl_b
+Sil[:,0] = Sl_t ; Sil[:,1] = Tl_b
+Tir[:,0] = Tr_t ; Tir[:,1] = Tr_b
+Sir[:,0] = Sr_t ; Sir[:,1] = Tr_b
+
+
 ndiff.ppm_routines.find_neutral_surface_positions_discontinuous(
-    zil, Tl_t, Tl_b, Sl_t, Sl_b, drdt_lt, drdt_lb, drds_lt, drds_lb,
-    zir, Tr_t, Tr_b, Sr_t, Sr_b, drdt_rt, drdt_rb, drds_rt, drds_rb, PoL, PoR, KoL, KoR, hEff)
-df_identical_fortran = pd.DataFrame({'PoL': PoL, 'PoR': PoR, 'KoL': (KoL), 'KoR': (KoR)})
+    zil, Til, Sil, drdt_l, drds_l,
+    zir, Tir, Sir, drdt_r, drds_r, PoL, PoR, KoL, KoR, hEff)
+hEff = np.append(hEff,0.)
+df_identical_fortran = pd.DataFrame({'PoL': PoL, 'PoR': PoR, 'KoL': (KoL), 'KoR': (KoR), 'hEff' : hEff})
+interfaces = pd.DataFrame({'T TopLeft' : Tl_t, 'T BottomLeft' : Tl_b, 'T TopRight' : Tr_t, 'T BottomRight' : Tr_b})
 
 print(df_identical_fortran)
+print(interfaces)

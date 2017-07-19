@@ -424,7 +424,11 @@ def search_other_column(dRhoTop, dRhoBot, other_lastP, other_lastK, other_kl, ot
       other_kl = other_lastK
       print("Layer perfectly unstratified, same search direction")
     else:
-      other_P = np.real(this_ki) # Connect bottom interface to bottom interface or top to top
+      if other_lastP == 0.:
+        other_P = np.real(this_ki) # Connect bottom interface to bottom interface or top to top
+        other_P = 1.
+      else:
+        other_P = 0.
       print("Layer perfectly unstratified, different search direction")
 
   elif dRhoTop > dRhoBot:
