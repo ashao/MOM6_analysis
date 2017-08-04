@@ -85,7 +85,7 @@ drds_rt = np.zeros(nk) ; drds_rb = np.zeros(nk)
 reload(set_neutral_position)
 hl = np.array([10.,10.,10.,10.])
 hr = np.array([10.,10.,10.,10.])
-Tr = np.array([20.,16.,12.,10.])+2
+Tr = np.array([20.,16.,12.,10.])
 Tl = np.array([20.,16.,12.,10.])
 zil, zl_t, zl_b, zl_c, Tl_t, Tl_b = construct_column(hl, Tl)
 zir, zr_t, zr_b, zr_c, Tr_t, Tr_b = construct_column(hr, Tr)

@@ -72,7 +72,7 @@ def plot_neutral_surfaces(zr_t, zr_c, zr_b, Tr_t, Tr, Tr_b, PoR_abs, KoR,
     plt.gca().invert_yaxis()
 
 # Set up some examples based on Alistair's schematics of
-nk = 4
+nk = 5
 Sl_t = np.zeros(nk) ; Sl_b = np.zeros(nk)
 Sr_t = np.zeros(nk) ; Sr_b = np.zeros(nk)
 drdt_lt = -1*np.ones(nk) ; drdt_lb = -1*np.ones(nk)
@@ -80,10 +80,10 @@ drds_lt = np.zeros(nk) ; drds_lb = np.zeros(nk)
 drdt_rt = -1*np.ones(nk) ; drdt_rb = -1*np.ones(nk)
 drds_rt = np.zeros(nk) ; drds_rb = np.zeros(nk)
 
-hl = np.array([10.,10.,10.,10.])
-hr = np.array([10.,10.,10.,10.])
-Tr = np.array([20.,16.,12.,10.])+2 ; Sr = np.zeros_like(Tr)
-Tl = np.array([20.,16.,12.,10.]) ; Sl = np.zeros_like(Tl)
+hl = np.array([10.,10.,10.,10.,10.])
+hr = np.array([10.,10.,10.,10.,10.])
+Tr = np.array([20.,16.,12.,10.,8.]) ; Sr = np.zeros_like(Tr)
+Tl = np.array([20.,16.,12.,10.,8.]) ; Sl = np.zeros_like(Tl)
 zil, zl_t, zl_b, zl_c, Tl_t, Tl_b = construct_column(hl, Tl)
 zir, zr_t, zr_b, zr_c, Tr_t, Tr_b = construct_column(hr, Tr)
 print(Tl_t,Tl_b)
@@ -107,7 +107,7 @@ Tir[:,0] = Tr_t ; Tir[:,1] = Tr_b
 Sir[:,0] = Sr_t ; Sir[:,1] = Tr_b
 
 
-ndiff.ppm_routines.find_neutral_surface_positions_discontinuous(
+ndiff.ppm_routines.find_neutral_surface_positions_discontinuous(2,
     zil, Til, Sil, drdt_l, drds_l,
     zir, Tir, Sir, drdt_r, drds_r, PoL, PoR, KoL, KoR, hEff)
 hEff = np.append(hEff,0.)

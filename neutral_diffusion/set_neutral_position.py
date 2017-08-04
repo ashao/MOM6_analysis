@@ -66,7 +66,7 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
     krm1 = max(kr-1,0)
     dRho = 0.5 * ( ( dRdT_r[kr] + dRdT_l[kl] ) * ( Tr[kr] - Tl[kl] )
                   + (dRdS_r[kr] + dRdS_r[kr] ) * ( Sr[kr] - Sl[kl] ) )
-    print( "\nWorking on k_surface %d: dRho: %f Tl[%d]: %f Tr[%d]: %f" % (k_surface, dRho, kl, Tl[kl], kr, Tr[kr]))
+    print( "\nWorking on k_surface %d: dRho: %f Tl[%d]: %f Tr[%d]: %f" % (k_surface+1, dRho, kl+1, Tl[kl], kr, Tr[kr]))
 
     if not reached_bottom:
       if dRho < 0.:
@@ -90,7 +90,7 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
       dRhoBot = 0.5 * ( ( dRdT_l[klm1+1] + dRdT_r[kr] ) * ( Tl[klm1+1] - Tr[kr] )
                       + ( dRdS_l[klm1+1] + dRdS_r[kr] ) * ( Sl[klm1+1] - Sr[kr] ) )
       print("Searching left: dRhoTop: %f dRhoBot: %f" % (dRhoTop, dRhoBot))
-      print("klm1: %d kl: %d kr: %d" % (klm1,kl,kr))
+      print("klm1: %d kl: %d kr: %d" % (klm1+1,kl+1,kr+1))
       # Search left
       if kr + kl == 0.:
         PoL[k_surface] = 0.
@@ -141,7 +141,7 @@ def set_neutral_surface_position( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, dR
       dRhoBot = 0.5 * ( ( dRdT_r[krm1+1] + dRdT_l[kl] ) * ( Tr[krm1+1] - Tl[kl] )
                       + ( dRdS_r[krm1+1] + dRdS_l[kl] ) * ( Sr[krm1+1] - Sl[kl] ) )
       print("Searching right: dRhoTop: %f dRhoBot: %f" % (dRhoTop, dRhoBot))
-      print("krm1: %d kr: %d kl: %d" % (krm1,kr,kl))
+      print("krm1: %d kr: %d kl: %d" % (krm1+1,kr+1,kl+1))
       if kr + kl == 0.:
         PoR[k_surface] = 0.
         lastP_right = 0.
@@ -244,7 +244,7 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
 
         dRho = 0.5 * ( ( dRdT_r[kl_right,ki_right] + dRdT_l[kl_left,ki_left] ) * ( Tr[kl_right,ki_right] - Tl[kl_left,ki_left] )
                       + (dRdS_r[kl_right,ki_right] + dRdS_l[kl_left,ki_left] ) * ( Sr[kl_right,ki_right] - Sl[kl_left,ki_left] ) )
-        print( "\nWorking on k_surface %d: Tl[%d,%d]: %f Tr[%d,%d]: %f dRho: %f" % (k_surface, kl_left, ki_left, Tl[kl_left,ki_left], kl_right, ki_right, Tr[kl_right,ki_right],dRho))
+        print( "\nWorking on k_surface %d: Tl[%d,%d]: %f Tr[%d,%d]: %f dRho: %f" % (k_surface+1, kl_left+1, ki_left+1, Tl[kl_left,ki_left], kl_right+1, ki_right+1, Tr[kl_right,ki_right],dRho))
         if not reached_bottom:
           if dRho < 0.:
             same_dir = searching_left_column == True and searching_right_column == False
@@ -267,7 +267,7 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
 
         if searching_left_column:
           search_dir = np.append(search_dir,0)
-          print("Searching from right layer %d Interface %d" % (kl_right, ki_right))
+          print("Searching from right layer %d Interface %d" % (kl_right+1, ki_right+1))
           dRhoTop = 0.5 * ( ( dRdT_l[kl_left,0] + dRdT_r[kl_right,ki_right] ) * ( Tl[kl_left,0] - Tr[kl_right,ki_right] )
                           + ( dRdS_l[kl_left,0] + dRdS_r[kl_right,ki_right] ) * ( Sl[kl_left,0] - Sr[kl_right,ki_right] ) )
           dRhoBot = 0.5 * ( ( dRdT_l[kl_left,1] + dRdT_r[kl_right,ki_right] ) * ( Tl[kl_left,1] - Tr[kl_right,ki_right] )
@@ -302,7 +302,7 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
               print("AHHHH!")
 
           else:
-            print("Searching in left layer %d: dRhoTop: %f dRhoBot: %f" % (kl_left, dRhoTop, dRhoBot))
+            print("Searching in left layer %d: dRhoTop: %f dRhoBot: %f" % (kl_left+1, dRhoTop, dRhoBot))
             kl_right, ki_right, kl_left, ki_left, PoR[k_surface], PoL[k_surface],       \
               reached_bottom, searching_right_column, searching_left_column =    \
               search_other_column(dRhoTop, dRhoBot, lastP_left, lastK_left, kl_left, ki_left, \
@@ -315,7 +315,7 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
 
         elif (searching_right_column):
           search_dir = np.append(search_dir,1)
-          print("Searching from left layer %d interface %d" % (kl_left, ki_left))
+          print("Searching from left layer %d interface %d" % (kl_left+1, ki_left+1))
           dRhoTop = 0.5 * \
             ( ( dRdT_r[kl_right,0] + dRdT_l[kl_left,ki_left] ) * ( Tr[kl_right,0] - Tl[kl_left,ki_left] )
             + ( dRdS_r[kl_right,0] + dRdS_l[kl_left,ki_left] ) * ( Sr[kl_right,0] - Sl[kl_left,ki_left] ) )
@@ -353,7 +353,7 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
             else:
               print("AHHHH!")
           else:
-            print("Searching in right layer %d: dRhoTop: %f dRhoBot: %f" % (kl_right, dRhoTop,dRhoBot))
+            print("Searching in right layer %d: dRhoTop: %f dRhoBot: %f" % (kl_right+1, dRhoTop,dRhoBot))
             kl_left, ki_left, kl_right, ki_right, PoL[k_surface], PoR[k_surface],           \
               reached_bottom, searching_left_column, searching_right_column =        \
               search_other_column(dRhoTop, dRhoBot, lastP_right, lastK_right, kl_right, ki_right,  \
@@ -371,8 +371,8 @@ def set_neutral_surface_position2( Pres_l, Tint_lt, Tint_lb, Sint_lt, Sint_lb, d
         lastK_right = KoR[k_surface]
         lastP_left = PoL[k_surface]
         lastK_left = KoL[k_surface]
-        print("Position on left layer %d: %f" % (KoL[k_surface],PoL[k_surface]))
-        print("Position on right layer %d: %f" % (KoR[k_surface],PoR[k_surface]))
+        print("Position on left layer %d: %f" % (KoL[k_surface]+1,PoL[k_surface]))
+        print("Position on right layer %d: %f" % (KoR[k_surface]+1,PoR[k_surface]))
         if k_surface>0:
           PoL_abs[k_surface] = absolute_position(Pres_l, KoL, PoL, k_surface)
           PoR_abs[k_surface] = absolute_position(Pres_r, KoR, PoR, k_surface)
@@ -447,11 +447,11 @@ def search_other_column(dRhoTop, dRhoBot, other_lastP, other_lastK, other_kl, ot
   this_P = np.real(this_ki)
   if this_ki == 0:
     this_ki = 1
-    print("Search bottom of same layer %d" % this_kl)
+    print("Search bottom of same layer %d" % (this_kl+1))
   elif (this_ki == 1) and (this_kl<nk-1):
     this_ki = 0
     this_kl = this_kl + 1
-    print("Search top of next layer %d" % this_kl)
+    print("Search top of next layer %d" % (this_kl+1))
   elif (this_kl == nk-1) and (this_ki == 1): # Reached bottom
     reached_bottom = True
     searching_this_column = True
@@ -481,7 +481,7 @@ def find_neutral_surface_positions_continuous(Pl, Tl, Sl, dRdTl, dRdSl, Pr, Tr, 
     klm1 = max(kl-1, 0)
     krm1 = max(kr-1, 0)
 
-    print( "\nWorking on k_surface %d: Tl[%d]: %f Tr[%d]: %f" % (k_surface, kl, Tl[kl], kr, Tr[kr]))
+    print( "\nWorking on k_surface %d: Tl[%d]: %f Tr[%d]: %f" % (k_surface+1, kl+1, Tl[kl], kr, Tr[kr]))
     # Potential density difference, rho[kr] - rho[kl]
     dRho = 0.5 * ( ( dRdTr[kr] + dRdTl[kl] ) * ( Tr[kr] - Tl[kl] )
                  + ( dRdSr[kr] + dRdSl[kl] ) * ( Sr[kr] - Sl[kl] ) )
