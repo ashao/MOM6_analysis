@@ -5,7 +5,7 @@ import sys
 import argparse
 import numpy as np
 from netCDF4 import Dataset
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 def main(arguments):
   args = parse_input_arguments(arguments)
@@ -13,16 +13,23 @@ def main(arguments):
   if (args.tmax==-1):
     args.tmax = np.size(Dataset(args.infile).variables['time'][:])
 
-  plt.figure()
+#  plt.figure()
   for tidx in range(args.tmin,args.tmax):
-    lhs = Dataset(args.infile).variables['Sh_tendency'][tidx,:,:,:]
+    lhs = Dataset(args.infile).variables['Sh_tendency_sum'][tidx,:,:,:]
     salt_rhs = calculate_rhs(args.infile,tidx)
-    print("Maximum difference: %f" % np.max(np.abs(lhs-salt_rhs)))
+    print("---Cell-by-cell statistics---")
+    print("Maximum difference: %e" % np.max(np.abs(lhs-salt_rhs)))
     print("Mean difference: %f" % np.mean(np.abs(lhs-salt_rhs)))
     print("Sum difference: %f" % np.sum(np.abs(lhs-salt_rhs)))
-    plt.pcolormesh(np.sum(np.abs(lhs-salt_rhs),axis=0),cmap=plt.cm.coolwarm)
-    plt.colorbar()
-    plt.show()
+    print("Global sum of total tendency: %f Error: %f" % (lhs.sum(), np.sum(np.abs(lhs-salt_rhs))))
+    print("---Column integral statistics---")
+    print("Maximum difference: %e" % np.max( np.abs( lhs.sum(axis=0)-salt_rhs.sum(axis=0) ) ))
+    print("Mean difference: %e" % np.mean( np.abs(lhs.sum(axis=0)-salt_rhs.sum(axis=0)) ) )
+    print("Sum difference: %e" % np.sum( np.abs(lhs.sum(axis=0)-salt_rhs.sum(axis=0)) ) )
+
+#    plt.pcolormesh(np.sum(np.abs(lhs-salt_rhs),axis=0),cmap=plt.cm.coolwarm)
+#    plt.colorbar()
+#    plt.show()
 
 
 
@@ -49,11 +56,11 @@ def parse_input_arguments(arguments):
 
 # Right hand side of equation is the sum of all individual tendencies
 def calculate_rhs(infile,tidx):
-  rhs =  Dataset(infile).variables['boundary_forcing_salt_tendency'][tidx,:,:,:]
-  rhs += Dataset(infile).variables['S_advection_xy'][tidx,:,:,:]
-  rhs += Dataset(infile).variables['Sh_tendency_vert_remap'][tidx,:,:,:]
-  rhs += Dataset(infile).variables['osaltdiff'][tidx,:,:,:]
-  rhs += Dataset(infile).variables['osaltpmdiff'][tidx,:,:,:]
+  rhs = Dataset(infile).variables['Sh_tendency_vert_remap_sum'][tidx,:,:,:]
+  rhs += Dataset(infile).variables['osaltdiff_sum'][tidx,:,:,:]
+  rhs += Dataset(infile).variables['osaltpmdiff_sum'][tidx,:,:,:]
+  rhs += Dataset(infile).variables['S_advection_xy_sum'][tidx,:,:,:]
+  rhs +=  Dataset(infile).variables['boundary_forcing_salt_tendency_sum'][tidx,:,:,:]
   return rhs
 
 if __name__ == '__main__':
