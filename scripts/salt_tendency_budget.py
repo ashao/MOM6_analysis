@@ -15,13 +15,14 @@ def main(arguments):
 
 #  plt.figure()
   for tidx in range(args.tmin,args.tmax):
-    lhs = Dataset(args.infile).variables['Sh_tendency_sum'][tidx,:,:,:]
+    lhs = Dataset(args.infile).variables['osalttend'][tidx,:,:,:]
     salt_rhs = calculate_rhs(args.infile,tidx)
     print("---Cell-by-cell statistics---")
-    print("Maximum difference: %e" % np.max(np.abs(lhs-salt_rhs)))
+    max_idx = np.unravel_index(np.argmax(np.abs(lhs-salt_rhs)),lhs.shape)
+    print("Maximum difference: %e of %e at %s" % (np.max(np.abs(lhs-salt_rhs)), lhs[max_idx], max_idx))
     print("Mean difference: %f" % np.mean(np.abs(lhs-salt_rhs)))
     print("Sum difference: %f" % np.sum(np.abs(lhs-salt_rhs)))
-    print("Global sum of total tendency: %f Error: %f" % (lhs.sum(), np.sum(np.abs(lhs-salt_rhs))))
+    print("Global sum of total tendency: %f Error: %f" % (np.abs(lhs).sum(), np.sum(np.abs(lhs-salt_rhs))))
     print("---Column integral statistics---")
     print("Maximum difference: %e" % np.max( np.abs( lhs.sum(axis=0)-salt_rhs.sum(axis=0) ) ))
     print("Mean difference: %e" % np.mean( np.abs(lhs.sum(axis=0)-salt_rhs.sum(axis=0)) ) )
@@ -56,11 +57,11 @@ def parse_input_arguments(arguments):
 
 # Right hand side of equation is the sum of all individual tendencies
 def calculate_rhs(infile,tidx):
-  rhs = Dataset(infile).variables['Sh_tendency_vert_remap_sum'][tidx,:,:,:]
-  rhs += Dataset(infile).variables['osaltdiff_sum'][tidx,:,:,:]
-  rhs += Dataset(infile).variables['osaltpmdiff_sum'][tidx,:,:,:]
-  rhs += Dataset(infile).variables['S_advection_xy_sum'][tidx,:,:,:]
-  rhs +=  Dataset(infile).variables['boundary_forcing_salt_tendency_sum'][tidx,:,:,:]
+  rhs = Dataset(infile).variables['Sh_tendency_vert_remap'][tidx,:,:,:]
+  rhs += Dataset(infile).variables['osaltdiff'][tidx,:,:,:]
+#  rhs += Dataset(infile).variables['osaltpmdiff'][tidx,:,:,:]
+  rhs += Dataset(infile).variables['S_advection_xy'][tidx,:,:,:]
+  rhs +=  Dataset(infile).variables['boundary_forcing_salt_tendency'][tidx,:,:,:]
   return rhs
 
 if __name__ == '__main__':
