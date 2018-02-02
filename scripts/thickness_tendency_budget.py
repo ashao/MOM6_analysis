@@ -15,12 +15,11 @@ def main(arguments):
 
 #  plt.figure()
   for tidx in range(args.tmin,args.tmax):
-    print("===Time Level %02d ===" % tidx)
-    lhs = (Dataset(args.infile).variables['opottemptend'][tidx,:,:,:])
+    lhs = Dataset(args.infile).variables['dhdt'][tidx,:,:,:]
     temp_rhs = calculate_rhs(args.infile,tidx)
     print("---Cell-by-cell statistics---")
     max_idx = np.unravel_index(np.argmax(np.abs(lhs-temp_rhs)),lhs.shape)
-    print("Maximum difference: %e of %e at %s" % (np.abs(lhs-temp_rhs)[max_idx], lhs[max_idx], max_idx))
+    print("Maximum difference: %e of %e at %s" % (np.max(np.abs(lhs-temp_rhs)), lhs[max_idx], max_idx))
     print("Mean difference: %f" % np.mean(np.abs(lhs-temp_rhs)))
     print("Sum difference: %f" % np.sum(np.abs(lhs-temp_rhs)))
     print("Global sum of total tendency: %f Error: %f" % (np.abs(lhs).sum(), np.sum(np.abs(lhs-temp_rhs))))
@@ -30,7 +29,6 @@ def main(arguments):
     print("Maximum difference: %e at %s"  % (col_err.max(),max_idx))
     print("Mean difference: %e" % np.mean( np.abs(lhs.sum(axis=0)-temp_rhs.sum(axis=0)) ) )
     print("Sum difference: %e" % np.sum( np.abs(lhs.sum(axis=0)-temp_rhs.sum(axis=0)) ) )
-    print("\n")
 
 #    plt.pcolormesh(np.sum(np.abs(lhs-temp_rhs),axis=0),cmap=plt.cm.coolwarm)
 #    plt.colorbar()
@@ -61,12 +59,9 @@ def parse_input_arguments(arguments):
 
 # Right hand side of equation is the sum of all individual tendencies
 def calculate_rhs(infile,tidx):
-  rhs = (Dataset(infile).variables['Th_tendency_vert_remap'][tidx,:,:,:])
-  rhs += (Dataset(infile).variables['opottempdiff'][tidx,:,:,:])
-#  rhs += Dataset(infile).variables['otemppmdiff'][tidx,:,:,:]
-  rhs += (Dataset(infile).variables['T_advection_xy'][tidx,:,:,:])
-  rhs +=  (Dataset(infile).variables['boundary_forcing_heat_tendency'][tidx,:,:,:])
-  rhs +=  (Dataset(infile).variables['frazil_heat_tendency'][tidx,:,:,:])
+  rhs =  Dataset(infile).variables['vert_remap_h_tendency'][tidx,:,:,:]
+  rhs += Dataset(infile).variables['dynamics_h_tendency'][tidx,:,:,:]
+  rhs += Dataset(infile).variables['boundary_forcing_h_tendency'][tidx,:,:,:]
   return rhs
 
 if __name__ == '__main__':
